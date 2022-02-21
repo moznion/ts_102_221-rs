@@ -373,7 +373,12 @@ impl Instruction for GetResponse {
     }
 }
 
-fn validate(instruction: u8, class: &Class, patterns: &[u8], exact: bool) -> Option<InstructionError> {
+fn validate(
+    instruction: u8,
+    class: &Class,
+    patterns: &[u8],
+    exact: bool,
+) -> Option<InstructionError> {
     let b = class.get_byte();
 
     let mut patterns_for_err = Vec::new();
@@ -389,25 +394,48 @@ fn validate(instruction: u8, class: &Class, patterns: &[u8], exact: bool) -> Opt
         patterns_for_err.push(format!("'{:#04x}'", *pattern));
     }
 
-    Option::Some(InstructionError::InvalidClassByte(instruction, patterns_for_err.join(" or "), b))
+    Option::Some(InstructionError::InvalidClassByte(
+        instruction,
+        patterns_for_err.join(" or "),
+        b,
+    ))
 }
 
 #[cfg(test)]
 mod test {
-    use crate::class::{ClassTypeForExtendedLogicalChannels, ClassTypeForStandardLogicalChannels, new_extended_class, new_standard_class, SecureMessagingIndicationForExtendedLogicalChannels, SecureMessagingIndicationForStandardLogicalChannels};
+    use crate::class::{
+        new_extended_class, new_standard_class, ClassTypeForExtendedLogicalChannels,
+        ClassTypeForStandardLogicalChannels, SecureMessagingIndicationForExtendedLogicalChannels,
+        SecureMessagingIndicationForStandardLogicalChannels,
+    };
     use crate::instruction::{Fetch, Instruction, InstructionError, SelectFile};
 
     #[test]
     fn should_get_byte_successfully() {
         let sf = SelectFile {};
 
-        let class = new_standard_class(ClassTypeForStandardLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated, 3).unwrap(); // 0b00001111
+        let class = new_standard_class(
+            ClassTypeForStandardLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated,
+            3,
+        )
+        .unwrap(); // 0b00001111
         assert_eq!(sf.get_byte(&class).unwrap(), 0xa4);
 
-        let class = new_extended_class(ClassTypeForExtendedLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForExtendedLogicalChannels::NoSM, 15).unwrap(); // 0b01001111
+        let class = new_extended_class(
+            ClassTypeForExtendedLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForExtendedLogicalChannels::NoSM,
+            15,
+        )
+        .unwrap(); // 0b01001111
         assert_eq!(sf.get_byte(&class).unwrap(), 0xa4);
 
-        let class = new_extended_class(ClassTypeForExtendedLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForExtendedLogicalChannels::CommandHeaderNotAuthenticated, 15).unwrap(); // 0b01101111
+        let class = new_extended_class(
+            ClassTypeForExtendedLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForExtendedLogicalChannels::CommandHeaderNotAuthenticated,
+            15,
+        )
+        .unwrap(); // 0b01101111
         assert_eq!(sf.get_byte(&class).unwrap(), 0xa4);
     }
 
@@ -415,21 +443,62 @@ mod test {
     fn should_fail_get_byte_when_class_is_unsuitable() {
         let sf = SelectFile {};
 
-        let class = new_standard_class(ClassTypeForStandardLogicalChannels::TS102_221, SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated, 3).unwrap(); // 0b10001111
-        assert_eq!(sf.get_byte(&class).unwrap_err(), InstructionError::InvalidClassByte(0xa4, "'0x00' or '0x40' or '0x60'".into(), 0b10001111));
+        let class = new_standard_class(
+            ClassTypeForStandardLogicalChannels::TS102_221,
+            SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated,
+            3,
+        )
+        .unwrap(); // 0b10001111
+        assert_eq!(
+            sf.get_byte(&class).unwrap_err(),
+            InstructionError::InvalidClassByte(
+                0xa4,
+                "'0x00' or '0x40' or '0x60'".into(),
+                0b10001111
+            )
+        );
 
-        let class = new_standard_class(ClassTypeForStandardLogicalChannels::OTHER, SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated, 3).unwrap(); // 0b10101111
-        assert_eq!(sf.get_byte(&class).unwrap_err(), InstructionError::InvalidClassByte(0xa4, "'0x00' or '0x40' or '0x60'".into(), 0b10101111));
+        let class = new_standard_class(
+            ClassTypeForStandardLogicalChannels::OTHER,
+            SecureMessagingIndicationForStandardLogicalChannels::CommandHeaderAuthenticated,
+            3,
+        )
+        .unwrap(); // 0b10101111
+        assert_eq!(
+            sf.get_byte(&class).unwrap_err(),
+            InstructionError::InvalidClassByte(
+                0xa4,
+                "'0x00' or '0x40' or '0x60'".into(),
+                0b10101111
+            )
+        );
 
-        let class = new_extended_class(ClassTypeForExtendedLogicalChannels::TS102_221, SecureMessagingIndicationForExtendedLogicalChannels::NoSM, 15).unwrap(); // 0b11001111
-        assert_eq!(sf.get_byte(&class).unwrap_err(), InstructionError::InvalidClassByte(0xa4, "'0x00' or '0x40' or '0x60'".into(), 0b11001111));
+        let class = new_extended_class(
+            ClassTypeForExtendedLogicalChannels::TS102_221,
+            SecureMessagingIndicationForExtendedLogicalChannels::NoSM,
+            15,
+        )
+        .unwrap(); // 0b11001111
+        assert_eq!(
+            sf.get_byte(&class).unwrap_err(),
+            InstructionError::InvalidClassByte(
+                0xa4,
+                "'0x00' or '0x40' or '0x60'".into(),
+                0b11001111
+            )
+        );
     }
 
     #[test]
     fn should_get_byte_with_exact_successfully() {
         let fetch = Fetch {};
 
-        let class = new_standard_class(ClassTypeForStandardLogicalChannels::TS102_221, SecureMessagingIndicationForStandardLogicalChannels::NoSM, 0).unwrap(); // 0b10000000
+        let class = new_standard_class(
+            ClassTypeForStandardLogicalChannels::TS102_221,
+            SecureMessagingIndicationForStandardLogicalChannels::NoSM,
+            0,
+        )
+        .unwrap(); // 0b10000000
         assert_eq!(fetch.get_byte(&class).unwrap(), 0x12);
     }
 
@@ -437,7 +506,15 @@ mod test {
     fn should_fail_get_byte_with_exact() {
         let fetch = Fetch {};
 
-        let class = new_standard_class(ClassTypeForStandardLogicalChannels::TS102_221, SecureMessagingIndicationForStandardLogicalChannels::NoSM, 1).unwrap(); // 0b10000001
-        assert_eq!(fetch.get_byte(&class).unwrap_err(), InstructionError::InvalidClassByte(0x12, "'0x80'".into(), 0b10000001));
+        let class = new_standard_class(
+            ClassTypeForStandardLogicalChannels::TS102_221,
+            SecureMessagingIndicationForStandardLogicalChannels::NoSM,
+            1,
+        )
+        .unwrap(); // 0b10000001
+        assert_eq!(
+            fetch.get_byte(&class).unwrap_err(),
+            InstructionError::InvalidClassByte(0x12, "'0x80'".into(), 0b10000001)
+        );
     }
 }

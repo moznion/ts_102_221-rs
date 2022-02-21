@@ -19,7 +19,6 @@ pub enum SecureMessagingIndicationForStandardLogicalChannels {
     ProprietarySM = 0b00000100,
     CommandHeaderNotAuthenticated = 0b00001000,
     CommandHeaderAuthenticated = 0b00001100,
-
 }
 
 #[repr(u8)]
@@ -42,23 +41,35 @@ pub enum ClassError {
     InvalidNumberOfExtendedLogicalChannel(u8),
 }
 
-pub fn new_standard_class(typ: ClassTypeForStandardLogicalChannels, secure_messaging_indication: SecureMessagingIndicationForStandardLogicalChannels, logical_channel_number: u8) -> Result<Class, ClassError> {
+pub fn new_standard_class(
+    typ: ClassTypeForStandardLogicalChannels,
+    secure_messaging_indication: SecureMessagingIndicationForStandardLogicalChannels,
+    logical_channel_number: u8,
+) -> Result<Class, ClassError> {
     if logical_channel_number >= 4 {
-        return Err(ClassError::InvalidNumberOfStandardLogicalChannel(logical_channel_number));
+        return Err(ClassError::InvalidNumberOfStandardLogicalChannel(
+            logical_channel_number,
+        ));
     }
 
     Ok(Class {
-        byte: typ as u8 | secure_messaging_indication as u8 | logical_channel_number
+        byte: typ as u8 | secure_messaging_indication as u8 | logical_channel_number,
     })
 }
 
-pub fn new_extended_class(typ: ClassTypeForExtendedLogicalChannels, secure_messaging_indication: SecureMessagingIndicationForExtendedLogicalChannels, logical_channel_number: u8) -> Result<Class, ClassError> {
+pub fn new_extended_class(
+    typ: ClassTypeForExtendedLogicalChannels,
+    secure_messaging_indication: SecureMessagingIndicationForExtendedLogicalChannels,
+    logical_channel_number: u8,
+) -> Result<Class, ClassError> {
     if logical_channel_number >= 16 {
-        return Err(ClassError::InvalidNumberOfExtendedLogicalChannel(logical_channel_number));
+        return Err(ClassError::InvalidNumberOfExtendedLogicalChannel(
+            logical_channel_number,
+        ));
     }
 
     Ok(Class {
-        byte: typ as u8 | secure_messaging_indication as u8 | logical_channel_number
+        byte: typ as u8 | secure_messaging_indication as u8 | logical_channel_number,
     })
 }
 
@@ -70,29 +81,55 @@ impl Class {
 
 #[cfg(test)]
 mod test {
-    use crate::class::{ClassError, ClassTypeForExtendedLogicalChannels, ClassTypeForStandardLogicalChannels, new_extended_class, new_standard_class, SecureMessagingIndicationForExtendedLogicalChannels, SecureMessagingIndicationForStandardLogicalChannels};
+    use crate::class::{
+        new_extended_class, new_standard_class, ClassError, ClassTypeForExtendedLogicalChannels,
+        ClassTypeForStandardLogicalChannels, SecureMessagingIndicationForExtendedLogicalChannels,
+        SecureMessagingIndicationForStandardLogicalChannels,
+    };
 
     #[test]
     fn should_new_standard_class_successfully() {
-        let result = new_standard_class(ClassTypeForStandardLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForStandardLogicalChannels::NoSM, 0);
+        let result = new_standard_class(
+            ClassTypeForStandardLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForStandardLogicalChannels::NoSM,
+            0,
+        );
         assert_eq!(result.unwrap().get_byte(), 0b00000000);
     }
 
     #[test]
     fn should_new_extended_class_successfully() {
-        let result = new_extended_class(ClassTypeForExtendedLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForExtendedLogicalChannels::NoSM, 0);
+        let result = new_extended_class(
+            ClassTypeForExtendedLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForExtendedLogicalChannels::NoSM,
+            0,
+        );
         assert_eq!(result.unwrap().get_byte(), 0b01000000);
     }
 
     #[test]
     fn should_fail_new_standard_class_with_exceeded_channel_num() {
-        let result = new_standard_class(ClassTypeForStandardLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForStandardLogicalChannels::NoSM, 4);
-        assert_eq!(result.err().unwrap(), ClassError::InvalidNumberOfStandardLogicalChannel(4));
+        let result = new_standard_class(
+            ClassTypeForStandardLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForStandardLogicalChannels::NoSM,
+            4,
+        );
+        assert_eq!(
+            result.err().unwrap(),
+            ClassError::InvalidNumberOfStandardLogicalChannel(4)
+        );
     }
 
     #[test]
     fn should_fail_new_extended_class_with_exceeded_channel_num() {
-        let result = new_extended_class(ClassTypeForExtendedLogicalChannels::ISOIEC7816_4, SecureMessagingIndicationForExtendedLogicalChannels::NoSM, 16);
-        assert_eq!(result.err().unwrap(), ClassError::InvalidNumberOfExtendedLogicalChannel(16));
+        let result = new_extended_class(
+            ClassTypeForExtendedLogicalChannels::ISOIEC7816_4,
+            SecureMessagingIndicationForExtendedLogicalChannels::NoSM,
+            16,
+        );
+        assert_eq!(
+            result.err().unwrap(),
+            ClassError::InvalidNumberOfExtendedLogicalChannel(16)
+        );
     }
 }
